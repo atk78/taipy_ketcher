@@ -20,13 +20,16 @@ class Data:
         with cls._lock:
             return cls._smiles
 
-# Flask APIサーバー定義
+# *** Flask APIサーバー定義 ***
 app = Flask(__name__)
+# KetcherからのCORSリクエストを許可
 CORS(app)
 
+# POSTリクエストでSMILESを受け取るエンドポイント
 @app.route("/api/smiles", methods=["POST"])
 def receive_smiles():
     data = request.json
+    # SMILESを受け取ってDataクラスに保存
     try:
         smiles = Chem.MolToSmiles(
             Chem.MolFromSmiles(data.get("smiles", ""))
@@ -35,13 +38,16 @@ def receive_smiles():
         Data.set_smiles(smiles)
     except Exception as e:
         Data.set_smiles("")
+    # GUIに変更を通知
     gui.broadcast_change("smiles", smiles)
+    # ステータスをJSON形式で返す
     return jsonify({"status": "ok"})
 
+# Flaskサーバーを起動する関数
 def run_flask():
     app.run(port=8000)
 
-# Taipy GUI側
+# *** Taipy GUI側 ***
 smiles = None
 
 def on_init(state):
@@ -59,6 +65,8 @@ def calc_property(state):
         molwt = Descriptors.MolWt(mol)
         logp = Crippen.MolLogP(mol)  # ダミー分子のLogP
         print(f"SMILES: {state.smiles}, 分子量: {molwt}, LogP: {logp}")
+
+# *** ページ定義 ***
 
 page = """
 # Taipy Ketcher
